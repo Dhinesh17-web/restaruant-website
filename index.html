@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #f59e0b;
+      --accent-2: #10b981;
+      --danger: #ef4444;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, #111827, #0f172a);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    h1 { margin: 0; font-size: 20px; }
+    .container {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.1s ease, border-color 0.2s ease;
+      cursor: pointer;
+    }
+    .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #0b1220;
+    }
+    .card-title { font-weight: 700; }
+    .price { color: var(--accent); font-weight: 700; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .stack { display: flex; flex-direction: column; gap: 6px; }
+    .cart-list, .menu-list { display: flex; flex-direction: column; gap: 8px; }
+    .line {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: var(--card);
+    }
+    button {
+      background: var(--accent);
+      color: #0b0f19;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.1s ease, transform 0.1s ease;
+    }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+    button.secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.danger { background: var(--danger); color: #fff; }
+    button.success { background: var(--accent-2); color: #0b110e; }
+    input, textarea {
+      width: 100%;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    label { font-size: 13px; color: var(--muted); }
+    form { display: grid; gap: 10px; }
+    .pill { padding: 4px 10px; background: #0b1220; color: var(--muted); border-radius: 999px; font-size: 12px; }
+    .split { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .qty-input {
+      width: 64px;
+      text-align: center;
+      padding: 6px;
+    }
+    .empty { text-align: center; color: var(--muted); padding: 12px 0; }
+    @media (max-width: 960px) {
+      .container { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Restaurant Dashboard</h1>
+    <div class="row">
+      <span class="pill">Frontend-only demo</span>
+    </div>
+  </header>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const initialMenu = [
+      {
+        id: 'idly',
+        name: 'Idly',
+        price: 25,
+        category: 'Breakfast',
+        image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=60',
+        description: 'Soft steamed rice cakes served with chutney.'
+      },
+      {
+        id: 'dosa',
+        name: 'Dosa',
+        price: 50,
+        category: 'Breakfast',
+        image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=60',
+        description: 'Crispy dosa with potato masala.'
+      },
+      {
+        id: 'chapatti',
+        name: 'Chapatti',
+        price: 30,
+        category: 'Main',
+        image: 'https://images.unsplash.com/photo-1633945274405-9f5d0376f6d7?auto=format&fit=crop&w=600&q=60',
+        description: 'Whole wheat flatbread with curry.'
+      },
+      {
+        id: 'poratta',
+        name: 'Poratta',
+        price: 45,
+        category: 'Main',
+        image: 'https://images.unsplash.com/photo-1612874472278-5c1f9b9c74e8?auto=format&fit=crop&w=600&q=60',
+        description: 'Layered flaky bread, best with salna.'
+      },
+      {
+        id: 'coffee',
+        name: 'Coffee',
+        price: 20,
+        category: 'Beverage',
+        image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=60',
+        description: 'Hot filter coffee.'
+      }
+    ];
+
+    const currency = (n) => `₹${n.toFixed(2)}`;
+
+    function useMenuStore() {
+      const [items, setItems] = useState(initialMenu);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const addItem = (item) => {
+        if (items.some((m) => m.name.toLowerCase() === item.name.toLowerCase())) {
+          setError('Item with this name already exists.');
+          return false;
+        }
+        setItems((prev) => [...prev, { ...item, id: crypto.randomUUID() }]);
+        setError('');
+        return true;
+      };
+
+      const updateItem = (id, patch) => {
+        setItems((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+      };
+
+      const deleteItem = (id) => {
+        setItems((prev) => prev.filter((m) => m.id !== id));
+      };
+
+      return { items, loading, error, setError, addItem, updateItem, deleteItem };
+    }
+
+    function useCart() {
+      const [cart, setCart] = useState({});
+
+      const add = (item) => {
+        setCart((prev) => {
+          const current = prev[item.id] || { ...item, qty: 0 };
+          return { ...prev, [item.id]: { ...current, qty: current.qty + 1 } };
+        });
+      };
+
+      const updateQty = (id, qty) => {
+        setCart((prev) => {
+          if (qty <= 0) {
+            const copy = { ...prev };
+            delete copy[id];
+            return copy;
+          }
+          return { ...prev, [id]: { ...prev[id], qty } };
+        });
+      };
+
+      const remove = (id) => {
+        setCart((prev) => {
+          const copy = { ...prev };
+          delete copy[id];
+          return copy;
+        });
+      };
+
+      const clear = () => setCart({});
+
+      const items = Object.values(cart);
+      const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+      return { cart, items, add, updateQty, remove, clear, total };
+    }
+
+    function MenuCard({ item, onClick }) {
+      return (
+        <div className="card" onClick={() => onClick(item)}>
+          <img src={item.image} alt={item.name} />
+          <div className="split">
+            <div className="card-title">{item.name}</div>
+            <div className="price">{currency(item.price)}</div>
+          </div>
+          <div className="muted">{item.description}</div>
+          <div className="pill">{item.category}</div>
+        </div>
+      );
+    }
+
+    function CartPanel({ items, total, updateQty, remove, clear, checkout }) {
+      return (
+        <div className="panel">
+          <div className="section-title">
+            <span>Cart & Billing</span>
+            <span className="pill">Click card to add</span>
+          </div>
+          <div className="cart-list">
+            {items.length === 0 && <div className="empty">Cart is empty</div>}
+            {items.map((item) => (
+              <div className="line" key={item.id}>
+                <div className="split">
+                  <div className="stack">
+                    <strong>{item.name}</strong>
+                    <span className="muted">{currency(item.price)} each</span>
+                  </div>
+                  <div className="row">
+                    <input
+                      className="qty-input"
+                      type="number"
+                      min="1"
+                      value={item.qty}
+                      onChange={(e) => updateQty(item.id, Number(e.target.value))}
+                    />
+                    <button className="secondary" onClick={() => remove(item.id)}>Remove</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="split" style={{ marginTop: 12 }}>
+            <div className="stack">
+              <span className="muted">Subtotal</span>
+              <div style={{ fontSize: 20, fontWeight: 700 }}>{currency(total)}</div>
+            </div>
+            <div className="row">
+              <button className="secondary" onClick={clear} disabled={items.length === 0}>Clear</button>
+              <button className="success" onClick={checkout} disabled={items.length === 0}>Checkout</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function MenuAdmin({ onCreate, onUpdate, onDelete, editing, setEditing, menu }) {
+      const emptyForm = { name: '', price: '', category: '', image: '', description: '' };
+      const [form, setForm] = useState(emptyForm);
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+        if (editing) {
+          setForm({
+            name: editing.name,
+            price: editing.price,
+            category: editing.category,
+            image: editing.image,
+            description: editing.description,
+          });
+        } else {
+          setForm(emptyForm);
+        }
+      }, [editing]);
+
+      const onSubmit = (e) => {
+        e.preventDefault();
+        if (!form.name || !form.price) {
+          setError('Name and price are required.');
+          return;
+        }
+        const payload = { ...form, price: Number(form.price) };
+        if (editing) {
+          onUpdate(editing.id, payload);
+          setEditing(null);
+        } else {
+          const ok = onCreate(payload);
+          if (!ok) {
+            setError('Duplicate name. Choose another.');
+            return;
+          }
+        }
+        setError('');
+        setForm(emptyForm);
+      };
+
+      return (
+        <div className="panel">
+          <div className="section-title">
+            <span>Menu CRUD</span>
+            {editing && <button className="secondary" onClick={() => setEditing(null)}>Cancel edit</button>}
+          </div>
+          <form onSubmit={onSubmit}>
+            <div className="stack">
+              <label>Name</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="stack">
+              <label>Price (₹)</label>
+              <input type="number" value={form.price} min="1" onChange={(e) => setForm({ ...form, price: e.target.value })} />
+            </div>
+            <div className="stack">
+              <label>Category</label>
+              <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            </div>
+            <div className="stack">
+              <label>Image URL</label>
+              <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
+            </div>
+            <div className="stack">
+              <label>Description</label>
+              <textarea rows="2" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}></textarea>
+            </div>
+            {error && <div style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</div>}
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button type="submit">{editing ? 'Update Item' : 'Add Item'}</button>
+            </div>
+          </form>
+          <div className="section-title" style={{ marginTop: 16 }}>
+            <span>Menu Items</span>
+            <span className="pill">{menu.length} items</span>
+          </div>
+          <div className="menu-list">
+            {menu.map((item) => (
+              <div className="line" key={item.id}>
+                <div className="split">
+                  <div className="stack">
+                    <strong>{item.name}</strong>
+                    <span className="muted">{currency(item.price)} • {item.category}</span>
+                  </div>
+                  <div className="row">
+                    <button className="secondary" onClick={() => setEditing(item)}>Edit</button>
+                    <button className="danger" onClick={() => onDelete(item.id)}>Delete</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {menu.length === 0 && <div className="empty">No menu items yet.</div>}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const menuStore = useMenuStore();
+      const cart = useCart();
+      const [editing, setEditing] = useState(null);
+
+      const checkout = () => {
+        if (cart.items.length === 0) return;
+        alert(`Billing successful! Total: ${currency(cart.total)}`);
+        cart.clear();
+      };
+
+      return (
+        <>
+          <div className="container">
+            <div className="panel" style={{ gridColumn: '1 / span 1' }}>
+              <div className="section-title">
+                <span>Menu</span>
+                <span className="pill">Click to add to cart</span>
+              </div>
+              {menuStore.loading ? (
+                <div className="empty">Loading menu...</div>
+              ) : (
+                <div className="grid">
+                  {menuStore.items.map((item) => (
+                    <MenuCard key={item.id} item={item} onClick={cart.add} />
+                  ))}
+                </div>
+              )}
+            </div>
+            <CartPanel
+              items={cart.items}
+              total={cart.total}
+              updateQty={cart.updateQty}
+              remove={cart.remove}
+              clear={cart.clear}
+              checkout={checkout}
+            />
+          </div>
+
+          <div className="container">
+            <MenuAdmin
+              menu={menuStore.items}
+              onCreate={menuStore.addItem}
+              onUpdate={(id, patch) => {
+                menuStore.updateItem(id, patch);
+                if (cart.cart[id]) {
+                  // keep cart in sync with updated price/name
+                  cart.updateQty(id, cart.cart[id].qty);
+                }
+              }}
+              onDelete={(id) => {
+                menuStore.deleteItem(id);
+                if (cart.cart[id]) cart.remove(id);
+              }}
+              editing={editing}
+              setEditing={setEditing}
+            />
+          </div>
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+
